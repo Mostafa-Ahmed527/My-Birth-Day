@@ -221,10 +221,19 @@
                 localStorage.setItem('wishes', JSON.stringify(wishes));
                 input.value = '';
                 displayWishes();
-                // الانتقال إلى صفحة الصور
+                
+                // إرسال الرسالة عبر WhatsApp
+                const phoneNumber = '201107895056';
+                const message = encodeURIComponent(`🎂 كلمة حلوة: ${wish}`);
+                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+                
+                // فتح WhatsApp
+                window.open(whatsappUrl, '_blank');
+                
+                // الانتقال إلى صفحة الصور بعد فترة
                 setTimeout(() => {
                     window.location.href = 'gallery.html';
-                }, 500);
+                }, 1000);
             }
         }
         
