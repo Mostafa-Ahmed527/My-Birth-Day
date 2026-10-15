@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="theme-color"
+      content="#090b18"
+    />
+    <title>Happy Birthday!</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-width: 320px;
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        min-height: 100svh;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgb(24 17 16 / 58%), rgb(24 17 17 / 45%) 44%, rgb(13 13 16 / 76%)),
+          radial-gradient(ellipse at 50% 70%, rgb(136 91 56 / 38%), transparent 50%),
+          url("./WhatsApp Image 2026-10-15 at 3.20.44 PM.jpeg") center 38% / cover no-repeat,
+          #171412;
+        color: #fff;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      }
+
+      main {
+        position: relative;
+        display: grid;
+        min-height: 100svh;
+        place-items: start center;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      h1 {
+        position: absolute;
+        z-index: 1;
+        top: clamp(30px, 9svh, 100px);
+        width: 100%;
+        margin: 0;
+        padding: 0 12px;
+        color: #fff1d7;
+        font-size: clamp(1.45rem, 7.5vw, 3.4rem);
+        font-weight: 800;
+        letter-spacing: clamp(0.08rem, 1.45vw, 0.55rem);
+        line-height: 1.2;
+        text-align: center;
+        text-shadow:
+          0 0 12px rgb(255 228 180 / 78%),
+          0 0 34px rgb(224 154 91 / 56%);
+      }
+
+      canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      @media (max-width: 380px) {
+        h1 {
+          top: clamp(28px, 8svh, 54px);
+          font-size: clamp(1.2rem, 6.5vw, 1.5rem);
+          letter-spacing: clamp(0.06rem, 0.9vw, 0.18rem);
+        }
+      }
+
+      @media (orientation: landscape) and (max-height: 500px) {
+        h1 {
+          top: 8svh;
+          font-size: clamp(1.25rem, 5vw, 2rem);
+          letter-spacing: clamp(0.08rem, 0.9vw, 0.22rem);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main aria-label="A birthday celebration with a cake, two candles, and the number 18">
+      <h1>HAPPY BIRTH DAY</h1>
+      <canvas aria-hidden="true"></canvas>
+    </main>
+    <script>
+      const canvas = document.querySelector("canvas");
+      const ctx = canvas.getContext("2d");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let width = 0;
+      let height = 0;
+      let scale = 1;
+      let particles = [];
+      let cannons = [];
+      let launchTimer = 0;
+
+      function addLine(points, x1, y1, x2, y2, spacing) {
+        const distance = Math.hypot(x2 - x1, y2 - y1);
+        const steps = Math.max(1, Math.ceil(distance / spacing));
+        for (let step = 0; step <= steps; step += 1) {
+          const progress = step / steps;
+          points.push({
+            x: x1 + (x2 - x1) * progress,
+            y: y1 + (y2 - y1) * progress,
+          });
+        }
+      }
+
+      function addEllipse(points, centerX, centerY, radiusX, radiusY, spacing) {
+        const circumference = Math.PI * (3 * (radiusX + radiusY) -
+          Math.sqrt((3 * radiusX + radiusY) * (radiusX + 3 * radiusY)));
+        const steps = Math.max(12, Math.ceil(circumference / spacing));
+        for (let step = 0; step <= steps; step += 1) {
+          const angle = (step / steps) * Math.PI * 2;
+          points.push({
+            x: centerX + Math.cos(angle) * radiusX,
+            y: centerY + Math.sin(angle) * radiusY,
+          });
+        }
+      }
+
+      function cakeLayout() {
+        const topY = height * 0.46 + 22 * scale;
+        return {
+          centerX: width / 2,
+          half: Math.min(width * 0.32, 140 * scale),
+          topY,
+          baseY: height * 0.55 + 126 * scale,
+          icingY: topY + 28 * scale,
+        };
+      }
+
+      function addCakePoints() {
+        const points = [];
+        const { centerX, half, topY, baseY, icingY } = cakeLayout();
+        const spacing = Math.max(4, 5 * scale);
+
+        addEllipse(points, centerX, topY, half, 17 * scale, spacing);
+        addLine(points, centerX - half, topY, centerX - half, baseY, spacing);
+        addLine(points, centerX + half, topY, centerX + half, baseY, spacing);
+        addLine(points, centerX - half, baseY, centerX + half, baseY, spacing);
+
+        const dripWidth = 14 * scale;
+        const dripDepth = 10 * scale;
+        addLine(points, centerX - half, icingY, centerX + half, icingY, spacing);
+        for (let x = centerX - half + dripWidth; x < centerX + half; x += dripWidth * 2) {
+          addLine(points, x, icingY, x, icingY + dripDepth, spacing);
+          addLine(points, x, icingY + dripDepth, x + dripWidth, icingY + dripDepth, spacing);
+        }
+
+        for (let x = centerX - half + 9 * scale; x < centerX + half; x += 13 * scale) {
+          addEllipse(points, x, baseY - 12 * scale, 1.7 * scale, 1.7 * scale, spacing);
+          addEllipse(points, x, icingY + 14 * scale, 1.5 * scale, 1.5 * scale, spacing);
+        }
+
+        for (const offset of [-half * 0.64, 0, half * 0.64]) {
+          const berryX = centerX + offset;
+          addEllipse(points, berryX, topY - 5 * scale, 5 * scale, 6 * scale, spacing);
+          addLine(points, berryX - 2 * scale, topY - 11 * scale, berryX, topY - 15 * scale, spacing);
+          addLine(points, berryX + 2 * scale, topY - 11 * scale, berryX, topY - 15 * scale, spacing);
+        }
+
+        const candleY = topY - 43 * scale;
+        for (const offset of [-22, 22]) {
+          const candleX = centerX + offset * scale;
+          addLine(points, candleX - 5 * scale, candleY, candleX - 5 * scale, topY - 2 * scale, spacing);
+          addLine(points, candleX + 5 * scale, candleY, candleX + 5 * scale, topY - 2 * scale, spacing);
+          addLine(points, candleX - 5 * scale, candleY, candleX + 5 * scale, candleY, spacing);
+          addLine(points, candleX, candleY - 2 * scale, candleX, candleY - 10 * scale, spacing);
+        }
+
+        const numberCanvas = document.createElement("canvas");
+        numberCanvas.width = Math.ceil(84 * scale);
+        numberCanvas.height = Math.ceil(45 * scale);
+        const numberCtx = numberCanvas.getContext("2d");
+        numberCtx.fillStyle = "#fff";
+        numberCtx.font = `bold ${38 * scale}px Trebuchet MS, sans-serif`;
+        numberCtx.textAlign = "center";
+        numberCtx.textBaseline = "middle";
+        numberCtx.fillText("18", numberCanvas.width / 2, numberCanvas.height / 2);
+        const image = numberCtx.getImageData(0, 0, numberCanvas.width, numberCanvas.height);
+        for (let y = 0; y < numberCanvas.height; y += Math.max(3, Math.round(4 * scale))) {
+          for (let x = 0; x < numberCanvas.width; x += Math.max(3, Math.round(4 * scale))) {
+            if (image.data[(y * numberCanvas.width + x) * 4 + 3] > 100) {
+              points.push({
+                x: centerX - numberCanvas.width / 2 + x,
+                y: topY + 68 * scale - numberCanvas.height / 2 + y,
+              });
+            }
+          }
+        }
+        return points;
+      }
+
+      function drawBerry(x, y, now) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.sin(now * 0.001 + x) * 0.035);
+        ctx.fillStyle = "#bd674b";
+        ctx.beginPath();
+        ctx.moveTo(0, 9 * scale);
+        ctx.bezierCurveTo(-11 * scale, 0, -7 * scale, -9 * scale, 0, -5 * scale);
+        ctx.bezierCurveTo(7 * scale, -9 * scale, 11 * scale, 0, 0, 9 * scale);
+        ctx.fill();
+        ctx.fillStyle = "#a4aa70";
+        ctx.beginPath();
+        ctx.moveTo(0, -5 * scale);
+        ctx.lineTo(-6 * scale, -10 * scale);
+        ctx.lineTo(-2 * scale, -8 * scale);
+        ctx.lineTo(0, -12 * scale);
+        ctx.lineTo(2 * scale, -8 * scale);
+        ctx.lineTo(7 * scale, -10 * scale);
+        ctx.lineTo(3 * scale, -4 * scale);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#f6dfaa";
+        for (const [seedX, seedY] of [[-3, -2], [3, -1], [0, 3], [-2, 6], [4, 4]]) {
+          ctx.beginPath();
+          ctx.arc(seedX * scale, seedY * scale, 0.8 * scale, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawCake(now) {
+        const { centerX, half, topY, baseY, icingY } = cakeLayout();
+        const left = centerX - half;
+        const right = centerX + half;
+        const bottomRadius = 9 * scale;
+
+        const sideGradient = ctx.createLinearGradient(left, 0, right, 0);
+        sideGradient.addColorStop(0, "#704335");
+        sideGradient.addColorStop(0.5, "#b77854");
+        sideGradient.addColorStop(1, "#704335");
+        ctx.fillStyle = sideGradient;
+        ctx.beginPath();
+        ctx.moveTo(left, topY);
+        ctx.lineTo(left, baseY - bottomRadius);
+        ctx.quadraticCurveTo(left, baseY, left + bottomRadius, baseY);
+        ctx.lineTo(right - bottomRadius, baseY);
+        ctx.quadraticCurveTo(right, baseY, right, baseY - bottomRadius);
+        ctx.lineTo(right, topY);
+        ctx.ellipse(centerX, topY, half, 17 * scale, 0, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+
+        const icingGradient = ctx.createLinearGradient(0, icingY, 0, baseY);
+        icingGradient.addColorStop(0, "#fff4df");
+        icingGradient.addColorStop(0.18, "#f2dfc5");
+        icingGradient.addColorStop(1, "#d6b28a");
+        ctx.fillStyle = icingGradient;
+        ctx.beginPath();
+        ctx.moveTo(left, icingY);
+        const dripWidth = 24 * scale;
+        let dripIndex = 0;
+        for (let x = left; x < right; x += dripWidth) {
+          const end = Math.min(x + dripWidth, right);
+          const middle = (x + end) / 2;
+          const depth = (dripIndex % 2 === 0 ? 12 : 8) * scale;
+          ctx.quadraticCurveTo(middle, icingY + depth * 2, end, icingY);
+          dripIndex += 1;
+        }
+        ctx.lineTo(right, baseY - bottomRadius);
+        ctx.quadraticCurveTo(right, baseY, right - bottomRadius, baseY);
+        ctx.lineTo(left + bottomRadius, baseY);
+        ctx.quadraticCurveTo(left, baseY, left, baseY - bottomRadius);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "rgb(255 225 177 / 85%)";
+        ctx.lineWidth = 2 * scale;
+        ctx.beginPath();
+        ctx.moveTo(left + 2 * scale, baseY - 23 * scale);
+        ctx.lineTo(right - 2 * scale, baseY - 23 * scale);
+        ctx.stroke();
+        for (let x = left + 10 * scale; x < right; x += 17 * scale) {
+          ctx.fillStyle = "#f1cf8e";
+          ctx.beginPath();
+          ctx.arc(x, baseY - 22 * scale, 1.8 * scale, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = "#58392d";
+        ctx.strokeStyle = "#e8c58d";
+        ctx.lineWidth = 2 * scale;
+        ctx.beginPath();
+        ctx.roundRect(centerX - 42 * scale, topY + 49 * scale, 84 * scale, 39 * scale, 8 * scale);
+        ctx.fill();
+        ctx.stroke();
+        ctx.save();
+        ctx.fillStyle = "#ffebc6";
+        ctx.font = `bold ${29 * scale}px Trebuchet MS, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "#e6bc79";
+        ctx.shadowBlur = 7 * scale;
+        ctx.fillText("18", centerX, topY + 68 * scale);
+        ctx.restore();
+
+        const topGradient = ctx.createLinearGradient(0, topY - 17 * scale, 0, topY + 17 * scale);
+        topGradient.addColorStop(0, "#fffaf0");
+        topGradient.addColorStop(1, "#e9cba6");
+        ctx.fillStyle = topGradient;
+        ctx.beginPath();
+        ctx.ellipse(centerX, topY, half, 17 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgb(255 255 255 / 85%)";
+        ctx.lineWidth = 1.5 * scale;
+        ctx.stroke();
+
+        for (const offset of [-half * 0.65, 0, half * 0.65]) {
+          drawBerry(centerX + offset, topY - 5 * scale, now);
+        }
+
+        for (const [index, offset] of [-22, 22].entries()) {
+          const candleX = centerX + offset * scale;
+          const candleY = topY - 43 * scale;
+          const candleGradient = ctx.createLinearGradient(candleX - 5 * scale, 0, candleX + 5 * scale, 0);
+          candleGradient.addColorStop(0, "#c08a54");
+          candleGradient.addColorStop(0.5, index === 0 ? "#fff0bd" : "#edcf99");
+          candleGradient.addColorStop(1, "#b17649");
+          ctx.fillStyle = candleGradient;
+          ctx.beginPath();
+          ctx.roundRect(candleX - 5 * scale, candleY, 10 * scale, topY - candleY, 3 * scale);
+          ctx.fill();
+          ctx.strokeStyle = "rgb(255 255 255 / 85%)";
+          ctx.lineWidth = 1 * scale;
+          ctx.stroke();
+          ctx.strokeStyle = "rgb(255 255 255 / 80%)";
+          ctx.lineWidth = 2 * scale;
+          for (let stripeY = candleY + 10 * scale; stripeY < topY - 5 * scale; stripeY += 13 * scale) {
+            ctx.beginPath();
+            ctx.moveTo(candleX - 4 * scale, stripeY);
+            ctx.lineTo(candleX + 4 * scale, stripeY - 5 * scale);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = "#49352d";
+          ctx.lineWidth = 1.5 * scale;
+          ctx.beginPath();
+          ctx.moveTo(candleX, candleY);
+          ctx.lineTo(candleX, candleY - 9 * scale);
+          ctx.stroke();
+        }
+      }
+
+      function drawFlames(now) {
+        const { centerX, topY } = cakeLayout();
+        const time = reduceMotion.matches ? 0 : now;
+
+        for (const [index, offset] of [-22, 22].entries()) {
+          const flicker = Math.sin(time * 0.012 + index * 2.4);
+          const sway = Math.sin(time * 0.007 + index * 1.8) * 2.2 * scale;
+          const candleX = centerX + offset * scale;
+          const flameY = topY - 43 * scale - 10 * scale;
+
+          ctx.save();
+          ctx.translate(candleX, flameY);
+          const glow = ctx.createRadialGradient(0, -5 * scale, 1, 0, -5 * scale, 25 * scale);
+          glow.addColorStop(0, "rgb(255 196 91 / 48%)");
+          glow.addColorStop(1, "rgb(255 159 69 / 0%)");
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(0, -5 * scale, 25 * scale, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.translate(sway, 0);
+          ctx.scale(1 + flicker * 0.07, 1 - flicker * 0.05);
+          const flameGradient = ctx.createLinearGradient(0, -20 * scale, 0, 5 * scale);
+          flameGradient.addColorStop(0, "#fff8c4");
+          flameGradient.addColorStop(0.38, "#ffd34f");
+          flameGradient.addColorStop(1, "#ff713c");
+          ctx.fillStyle = flameGradient;
+          ctx.shadowColor = "#ffb447";
+          ctx.shadowBlur = 15 * scale;
+          ctx.beginPath();
+          ctx.moveTo(0, 5 * scale);
+          ctx.bezierCurveTo(
+            (-8 - flicker) * scale,
+            1 * scale,
+            (-5 + flicker) * scale,
+            -8 * scale,
+            Math.sin(time * 0.01 + index) * 2 * scale,
+            (-18 - flicker * 2) * scale,
+          );
+          ctx.bezierCurveTo(8 * scale, -9 * scale, 8 * scale, 1 * scale, 0, 5 * scale);
+          ctx.fill();
+
+          ctx.fillStyle = "rgb(255 255 222 / 90%)";
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.ellipse(-1 * scale, 0, 2.5 * scale, 5 * scale, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function resize() {
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        scale = Math.min(width / 390, height / 700, 1.15);
+        canvas.width = Math.round(width * pixelRatio);
+        canvas.height = Math.round(height * pixelRatio);
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+        cannons = [
+          { x: 27 * scale, y: height - 35 * scale, direction: 1 },
+          { x: width - 27 * scale, y: height - 35 * scale, direction: -1 },
+        ];
+
+        const targets = addCakePoints();
+        const now = performance.now();
+        launchTimer = now;
+        particles = targets.map((target, index) => {
+          const cannonIndex = index % 2;
+          const cannon = cannons[cannonIndex];
+          const launchX = cannon.x + cannon.direction * 13 * scale;
+          const launchY = cannon.y - 17 * scale;
+          return {
+            ...target,
+            startX: launchX,
+            startY: launchY,
+            start: now + (reduceMotion.matches ? 0 : Math.random() * 2300),
+            duration: reduceMotion.matches ? 0 : 700 + Math.random() * 900,
+            size: 1 + Math.random() * 0.8,
+            cannonIndex,
+          };
+        });
+      }
+
+      function drawCannon(cannon, firing) {
+        const barrelLength = 26 * scale;
+        const angle = cannon.direction === 1 ? -Math.PI / 4 : -Math.PI * 3 / 4;
+        ctx.save();
+        ctx.translate(cannon.x, cannon.y);
+        ctx.fillStyle = "#b18b68";
+        ctx.strokeStyle = "#f4dfbb";
+        ctx.lineWidth = 2 * scale;
+        ctx.beginPath();
+        ctx.arc(0, 0, 12 * scale, Math.PI, 0);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#634333";
+        ctx.beginPath();
+        ctx.arc(-6 * scale, 2 * scale, 3 * scale, 0, Math.PI * 2);
+        ctx.arc(6 * scale, 2 * scale, 3 * scale, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.rotate(angle);
+        ctx.fillStyle = "#dec69e";
+        ctx.strokeStyle = "#fff1d1";
+        ctx.lineWidth = 1.5 * scale;
+        ctx.beginPath();
+        ctx.roundRect(-4 * scale, -barrelLength, 8 * scale, barrelLength, 3 * scale);
+        ctx.fill();
+        ctx.stroke();
+        if (firing) {
+          ctx.fillStyle = "rgb(255 231 176 / 88%)";
+          ctx.shadowColor = "#f7c978";
+          ctx.shadowBlur = 18 * scale;
+          ctx.beginPath();
+          ctx.arc(0, -barrelLength, 5 * scale, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function animate(now) {
+        ctx.clearRect(0, 0, width, height);
+        const firing = [false, false];
+
+        for (const particle of particles) {
+          if (now < particle.start) continue;
+          const progress = particle.duration === 0
+            ? 1
+            : Math.min(1, (now - particle.start) / particle.duration);
+          const eased = 1 - (1 - progress) ** 2;
+          const arc = Math.sin(progress * Math.PI) * 25 * scale;
+          const x = particle.startX + (particle.x - particle.startX) * eased;
+          const y = particle.startY + (particle.y - particle.startY) * eased - arc;
+          if (progress < 1) firing[particle.cannonIndex] = true;
+
+          ctx.beginPath();
+          ctx.fillStyle = progress < 1 ? "#fff" : "rgb(255 255 255 / 88%)";
+          ctx.shadowColor = "#fff";
+          ctx.shadowBlur = progress < 1 ? 9 * scale : 5 * scale;
+          ctx.arc(
+            progress < 1 ? x : particle.x,
+            progress < 1 ? y : particle.y,
+            particle.size * scale,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+
+        ctx.shadowBlur = 0;
+        cannons.forEach((cannon, index) => drawCannon(cannon, firing[index]));
+
+        const cakeComplete = particles.every(
+          (particle) => now >= particle.start + particle.duration,
+        );
+        if (cakeComplete) drawFlames(now);
+
+        if (now - launchTimer > 7200 && !reduceMotion.matches) {
+          launchTimer = now;
+          for (const particle of particles) {
+            particle.start = now + Math.random() * 1200;
+            particle.duration = 700 + Math.random() * 900;
+          }
+        }
+        window.requestAnimationFrame(animate);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      window.requestAnimationFrame(animate);
+    </script>
+  </body>
+</html>
